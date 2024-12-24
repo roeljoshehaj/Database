@@ -182,4 +182,39 @@ JOIN
 ORDER BY 
     pt.pending_task_count DESC;
 
-
+WITH pending_tasks AS (
+    SELECT 
+        t.employee_id,
+        COUNT(*) AS pending_task_count,
+        COUNT(CASE 
+                  WHEN t.priority = 'High' THEN 1
+                  END) AS high_priority_count
+    FROM 
+        tasks t
+    WHERE 
+        t.status = 'Pending'
+    GROUP BY 
+        t.employee_id
+),
+employee_info AS (
+    SELECT 
+        e.id AS employee_id,
+        e.name AS employee_name,
+        d.name AS department_name
+    FROM 
+        employees e
+    JOIN 
+        departments d ON e.department_id = d.id
+)
+SELECT 
+    ei.employee_name,
+    ei.department_name,
+    pt.pending_task_count,
+    ROUND((pt.high_priority_count::FLOAT / pt.pending_task_count) * 100, 2) AS high_priority_percentage
+FROM 
+    pending_tasks pt
+JOIN 
+    employee_info ei ON pt.employee_id = ei.employee_id
+ORDER BY 
+    pt.pending_task_count DESC
+LIMIT 3;
