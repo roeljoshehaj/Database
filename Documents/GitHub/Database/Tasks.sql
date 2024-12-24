@@ -265,3 +265,29 @@ JOIN
     departments d ON at.task_department = d.id
 ORDER BY 
     ee.employee_name;
+    
+    SELECT 
+    d.name AS department_name,
+    MAX(monthly_completion_rate) AS highest_completion_rate,
+    MIN(monthly_completion_rate) AS lowest_completion_rate,
+    (MAX(monthly_completion_rate) - MIN(monthly_completion_rate)) AS improvement_rate
+FROM (
+    SELECT 
+        t.department_id,
+        DATE_TRUNC('month', t.completion_date) AS month,
+        COUNT(CASE WHEN t.status = 'Completed' THEN 1 END)::FLOAT / COUNT(*) AS monthly_completion_rate
+    FROM 
+        tasks t
+    WHERE 
+        t.completion_date >= CURRENT_DATE - INTERVAL '1 year'
+    GROUP BY 
+        t.department_id, DATE_TRUNC('month', t.completion_date)
+) AS department_monthly_rates
+JOIN 
+    departments d ON department_monthly_rates.department_id = d.id
+GROUP BY 
+    d.id, d.name
+ORDER BY 
+    improvement_rate DESC
+LIMIT 1;
+
