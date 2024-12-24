@@ -151,3 +151,33 @@ ORDER BY
         WHEN 'Low' THEN 3
         ELSE 4
     END;
+
+WITH pending_tasks AS (
+    SELECT 
+        t.employee_id,
+        COUNT(*) AS pending_task_count
+    FROM 
+        tasks t
+    WHERE 
+        t.status = 'Pending'
+        AND t.deadline >= CURRENT_DATE
+        AND t.deadline < CURRENT_DATE + INTERVAL '1 month'
+    GROUP BY 
+        t.employee_id
+),
+total_employees AS (
+    SELECT 
+        COUNT(DISTINCT e.id) AS employee_count
+    FROM 
+        employees e
+)
+SELECT 
+    pt.employee_id,
+    pt.pending_task_count,
+    ROUND(pt.pending_task_count::FLOAT / te.employee_count, 2) AS avg_tasks_per_employee
+FROM 
+    pending_tasks pt
+JOIN 
+    total_employees te ON true
+ORDER BY 
+    pt.pending_task_count DESC;
