@@ -291,3 +291,17 @@ ORDER BY
     improvement_rate DESC
 LIMIT 1;
 
+SELECT 
+    d.name AS department_name,
+    COUNT(t.id) AS total_tasks,
+    COUNT(CASE WHEN t.status = 'Completed' THEN 1 END) AS completed_tasks,
+    COUNT(CASE WHEN t.status = 'Pending' THEN 1 END) AS pending_tasks,
+    COUNT(CASE WHEN t.status = 'Pending' AND t.deadline < CURRENT_DATE THEN 1 END) AS overdue_tasks
+FROM 
+    tasks t
+JOIN 
+    departments d ON t.department_id = d.id
+GROUP BY 
+    d.name
+ORDER BY 
+    d.name;
