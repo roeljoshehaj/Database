@@ -80,3 +80,32 @@ e.department_id
 ORDER BY 
 avg_completion_time_hours ASC;
 
+WITH task_stats AS (
+    SELECT 
+        t.employee_id,
+        COUNT(*) AS total_tasks,
+        COUNT(CASE 
+                  WHEN t.completed_at IS NOT NULL 
+                  AND t.completed_at <= t.deadline
+                  THEN
+                  END) AS completed_on_time
+    FROM 
+        tasks t
+    WHERE 
+        t.created_at >= date_trunc('quarter', CURRENT_DATE) -- Filtron për tremujorin aktual
+    GROUP BY 
+        t.employee_id
+)
+SELECT 
+    e.name,
+    ts.total_tasks,
+    ts.completed_on_time,
+    ROUND((ts.completed_on_time::FLOAT / ts.total_tasks) * 100, 2) AS completion_percentage
+FROM 
+    task_stats ts
+JOIN 
+    employees e ON ts.employee_id = e.id
+WHERE 
+    (ts.completed_on_time::FLOAT / ts.total_tasks) >= 0.90
+ORDER BY 
+    completion_percentage DESC;
