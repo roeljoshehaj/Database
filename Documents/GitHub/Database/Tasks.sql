@@ -218,3 +218,50 @@ JOIN
 ORDER BY 
     pt.pending_task_count DESC
 LIMIT 3;
+
+WITH employee_task_count AS (
+    SELECT 
+        t.employee_id,
+        COUNT(*) AS task_count
+    FROM 
+        tasks t
+    WHERE 
+        t.status = 'Pending'
+    GROUP BY 
+        t.employee_id
+),
+eligible_employees AS (
+    SELECT 
+        e.id AS employee_id,
+        e.name AS employee_name,
+        e.department_id,
+        et.task_count
+    FROM 
+        employees e
+    LEFT JOIN 
+        employee_task_count et ON e.id = et.employee_id
+    WHERE 
+        (et.task_count IS NULL OR et.task_count < 3)
+),
+available_tasks AS (
+    SELECT 
+        t.id AS task_id,
+        t.description AS task_description,
+        t.department_id AS task_department
+    FROM 
+        tasks t
+    WHERE 
+        t.status = 'Pending'
+)
+SELECT 
+    ee.employee_name,
+    at.task_description,
+    d.name AS department_name
+FROM 
+    eligible_employees ee
+JOIN 
+    available_tasks at ON ee.department_id = at.task_department
+JOIN 
+    departments d ON at.task_department = d.id
+ORDER BY 
+    ee.employee_name;
