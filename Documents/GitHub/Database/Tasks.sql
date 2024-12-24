@@ -87,7 +87,7 @@ WITH task_stats AS (
         COUNT(CASE 
                   WHEN t.completed_at IS NOT NULL 
                   AND t.completed_at <= t.deadline
-                  THEN
+                  THEN 1
                   END) AS completed_on_time
     FROM 
         tasks t
@@ -109,3 +109,45 @@ WHERE
     (ts.completed_on_time::FLOAT / ts.total_tasks) >= 0.90
 ORDER BY 
     completion_percentage DESC;
+
+WITH task_counts AS (
+    SELECT 
+        e.department_id,
+        t.priority,
+        COUNT(*) AS task_count
+    FROM 
+        tasks t
+    JOIN 
+        employees e ON t.employee_id = e.id
+    GROUP BY 
+        e.department_id, t.priority
+),
+department_task_totals AS (
+    SELECT 
+        e.department_id,
+        COUNT(*) AS total_tasks
+    FROM 
+        tasks t
+    JOIN 
+        employees e ON t.employee_id = e.id
+    GROUP BY 
+        e.department_id
+)
+SELECT 
+    d.name AS department_name,
+    tc.priority,
+    ROUND((tc.task_count::FLOAT / dt.total_tasks) * 100, 2) AS percentage
+FROM 
+    task_counts tc
+JOIN 
+    department_task_totals dt ON tc.department_id = dt.department_id
+JOIN 
+    departments d ON dt.department_id = d.id
+ORDER BY 
+    department_name, 
+    CASE tc.priority 
+        WHEN 'High' THEN 1
+        WHEN 'Medium' THEN 2
+        WHEN 'Low' THEN 3
+        ELSE 4
+    END;
