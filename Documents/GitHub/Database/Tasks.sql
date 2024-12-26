@@ -305,3 +305,23 @@ GROUP BY
     d.name
 ORDER BY 
     d.name;
+
+SELECT 
+    e.name AS employee_name,
+    d.name AS department_name,
+    COUNT(t.id) AS employee_task_count
+FROM 
+    employees e
+JOIN 
+    tasks t ON e.id = t.employee_id
+JOIN 
+    departments d ON e.department_id = d.id
+GROUP BY 
+    e.id, e.name, d.name
+HAVING 
+  COUNT(t.id) < (SELECT AVG(task_count) 
+  FROM (SELECT COUNT(*) AS task_count 
+  FROM tasks 
+GROUP BY employee_id) AS subquery)
+ORDER BY 
+    department_name, employee_name;
